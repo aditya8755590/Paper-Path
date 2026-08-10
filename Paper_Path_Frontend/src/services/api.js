@@ -5,7 +5,7 @@ const TOKEN_STORAGE_KEY = 'paper_path_token';
 const getStoredToken = () => {
   if (typeof window === 'undefined') {
     return null;
-    
+
   }
   return window.localStorage.getItem(TOKEN_STORAGE_KEY);
 };
@@ -25,6 +25,7 @@ const persistToken = (result) => {
 // 🌐 Pure, unmocked fetch request to your real backend
 async function request(endpoint, { method = 'GET', body } = {}) {
   const token = getStoredToken();
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method,
     headers: {

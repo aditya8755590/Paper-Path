@@ -21,7 +21,7 @@ export default function App() {
   const [pendingEmail, setPendingEmail] = useState('');   // email waiting for OTP
   const [otpError, setOtpError] = useState('');           // error from verifyOtp
   const { toasts, toast, removeToast } = useToast();
-  
+
   // 🌓 Theme State
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
@@ -36,7 +36,7 @@ export default function App() {
 
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
-  // 🔄 Check stored session token on mount
+  //  Check stored session token on mount
   useEffect(() => {
     const restoreSession = async () => {
       try {
