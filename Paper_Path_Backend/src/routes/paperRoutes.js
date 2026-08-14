@@ -6,77 +6,78 @@ import { processCsvStream, processPdfAndIngest, answerPaperQuestion } from '../s
 import paperModel from '../models/paper.js';
 
 const router = express.Router();
-const upload = multer({ 
-    dest: 'uploads/',
-    limits: { fileSize: 500 * 1024 * 1024 } 
+
+const upload = multer({
+  dest: 'uploads/',
+  limits: { fileSize: 500 * 1024 * 1024 }
 });
 
 // --- REAL MONGODB GET ROUTES ---
 router.get('/', async (req, res) => {
-    try {
-        // Only fetch active (non-archived) research papers, newest first
-        const papers = await paperModel.find(
-            { category: { $nin: ['Archived', 'CSV'] } },
-            '-chunks.embedding'
-        ).sort({ createdAt: -1 }).limit(100);
-        res.json({ data: papers });
-    } catch (error) {
-        console.error("❌ Error fetching papers:", error);
-        res.status(500).json({ message: "Failed to load papers." });
-    }
+  try {
+    // Only fetch active (non-archived) research papers, newest first
+    const papers = await paperModel.find(
+      { category: { $nin: ['Archived', 'CSV'] } },
+      '-chunks.embedding'
+    ).sort({ createdAt: -1 }).limit(100);
+    res.json({ data: papers });
+  } catch (error) {
+    console.error("❌ Error fetching papers:", error);
+    res.status(500).json({ message: "Failed to load papers." });
+  }
 });
 
 // 🌐 PROXY ROUTE FOR EMBEDDING REMOTE PDF DOCUMENTS (ArXiv / External PDF URLs)
 router.get('/proxy-pdf', async (req, res) => {
-    try {
-        const targetUrl = req.query.url;
-        if (!targetUrl) return res.status(400).send('Missing url parameter');
+  try {
+    const targetUrl = req.query.url;
+    if (!targetUrl) return res.status(400).send('Missing url parameter');
 
-        console.log(`📡 Proxying PDF stream for: ${targetUrl}`);
-        const fetchRes = await fetch(targetUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            }
-        });
+    console.log(`📡 Proxying PDF stream for: ${targetUrl}`);
+    const fetchRes = await fetch(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
 
-        if (!fetchRes.ok) {
-            return res.status(fetchRes.status).send('Failed to fetch remote PDF file.');
-        }
-
-        const arrayBuffer = await fetchRes.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'inline');
-        res.send(buffer);
-    } catch (error) {
-        console.error('❌ PDF Proxy Error:', error.message);
-        res.status(500).send('Proxy server failed to retrieve PDF file.');
+    if (!fetchRes.ok) {
+      return res.status(fetchRes.status).send('Failed to fetch remote PDF file.');
     }
+
+    const arrayBuffer = await fetchRes.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline');
+    res.send(buffer);
+  } catch (error) {
+    console.error('❌ PDF Proxy Error:', error.message);
+    res.status(500).send('Proxy server failed to retrieve PDF file.');
+  }
 });
 
 // 📄 EMBEDDED PDF DOCUMENT VIEWER ROUTE FOR ALL PAPERS
 router.get('/:paperId/render-pdf', async (req, res) => {
-    try {
-        const paper = await paperModel.findById(req.params.paperId);
-        if (!paper) return res.status(404).send('Paper not found');
+  try {
+    const paper = await paperModel.findById(req.params.paperId);
+    if (!paper) return res.status(404).send('Paper not found');
 
-        // If paper has a direct PDF URL, proxy or redirect to it
-        if (paper.pdfUrl) {
-            if (paper.pdfUrl.startsWith('http://localhost:3001') || paper.pdfUrl.startsWith('/uploads')) {
-                return res.redirect(paper.pdfUrl);
-            }
-            return res.redirect(`/api/papers/proxy-pdf?url=${encodeURIComponent(paper.pdfUrl)}`);
-        }
+    // If paper has a direct PDF URL, proxy or redirect to it
+    if (paper.pdfUrl) {
+      if (paper.pdfUrl.startsWith('http://localhost:3001') || paper.pdfUrl.startsWith('/uploads')) {
+        return res.redirect(paper.pdfUrl);
+      }
+      return res.redirect(`/api/papers/proxy-pdf?url=${encodeURIComponent(paper.pdfUrl)}`);
+    }
 
-        // If no direct PDF URL exists, render a styled Academic PDF Document page for inline iframe viewing
-        const authors = paper.authors || 'Academic Researcher';
-        const abstract = paper.abstract || 'No abstract available.';
-        const content = paper.content || (paper.chunks && paper.chunks.length > 0 ? paper.chunks.map(c => c.text).join('\n\n') : abstract);
-        const scholarUrl = `https://scholar.google.com/scholar?q=${encodeURIComponent(paper.title)}`;
-        const arxivUrl = `https://arxiv.org/search/?query=${encodeURIComponent(paper.title)}&searchtype=title`;
+    // If no direct PDF URL exists, render a styled Academic PDF Document page for inline iframe viewing
+    const authors = paper.authors || 'Academic Researcher';
+    const abstract = paper.abstract || 'No abstract available.';
+    const content = paper.content || (paper.chunks && paper.chunks.length > 0 ? paper.chunks.map(c => c.text).join('\n\n') : abstract);
+    const scholarUrl = `https://scholar.google.com/scholar?q=${encodeURIComponent(paper.title)}`;
+    const arxivUrl = `https://arxiv.org/search/?query=${encodeURIComponent(paper.title)}&searchtype=title`;
 
-        const htmlDocument = `<!DOCTYPE html>
+    const htmlDocument = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -200,86 +201,86 @@ router.get('/:paperId/render-pdf', async (req, res) => {
 </body>
 </html>`;
 
-        res.setHeader('Content-Type', 'text/html');
-        res.send(htmlDocument);
-    } catch (error) {
-        console.error('❌ Error rendering paper PDF:', error);
-        res.status(500).send('Failed to render paper document');
-    }
+    res.setHeader('Content-Type', 'text/html');
+    res.send(htmlDocument);
+  } catch (error) {
+    console.error('❌ Error rendering paper PDF:', error);
+    res.status(500).send('Failed to render paper document');
+  }
 });
 
 router.get('/:paperId', async (req, res) => {
-    try {
-        const paper = await paperModel.findById(req.params.paperId, '-chunks.embedding');
-        if (!paper) return res.status(404).json({ message: 'Paper not found' });
-        res.json({ data: paper });
-    } catch (error) {
-        console.error("❌ Error fetching paper details:", error);
-        res.status(500).json({ message: "Failed to load paper details." });
-    }
+  try {
+    const paper = await paperModel.findById(req.params.paperId, '-chunks.embedding');
+    if (!paper) return res.status(404).json({ message: 'Paper not found' });
+    res.json({ data: paper });
+  } catch (error) {
+    console.error("❌ Error fetching paper details:", error);
+    res.status(500).json({ message: "Failed to load paper details." });
+  }
 });
 
 // 🤖 AI TUTOR PAPER CHAT ROUTE
 router.post('/:paperId/ask', async (req, res) => {
-    try {
-        const { prompt } = req.body;
-        const { paperId } = req.params;
+  try {
+    const { prompt } = req.body;
+    const { paperId } = req.params;
 
-        if (!prompt) return res.status(400).json({ message: 'Please provide a prompt.' });
+    if (!prompt) return res.status(400).json({ message: 'Please provide a prompt.' });
 
-        console.log(`🤖 User asked: "${prompt}" about paper: ${paperId}`);
+    console.log(`🤖 User asked: "${prompt}" about paper: ${paperId}`);
 
-        const paper = await paperModel.findById(paperId);
-        if (!paper) {
-            return res.status(404).json({ message: "Paper not found." });
-        }
-
-        const answerText = await answerPaperQuestion(paper, prompt);
-        return res.json({ data: answerText });
-
-    } catch (error) {
-        console.error('❌ AI Chat Route failed:', error);
-        return res.status(500).json({ message: "Failed to generate AI response.", error: error.message });
+    const paper = await paperModel.findById(paperId);
+    if (!paper) {
+      return res.status(404).json({ message: "Paper not found." });
     }
+
+    const answerText = await answerPaperQuestion(paper, prompt);
+    return res.json({ data: answerText });
+
+  } catch (error) {
+    console.error('❌ AI Chat Route failed:', error);
+    return res.status(500).json({ message: "Failed to generate AI response.", error: error.message });
+  }
 });
 
 // 🔀 SMART UPLOAD ROUTE
 router.post('/upload', upload.single('dataset'), async (req, res) => {
-    try {
-        if (!req.file) return res.status(400).json({ success: false, message: "Please upload a file using the form field 'dataset'." });
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: "Please upload a file using the form field 'dataset'." });
 
-        const fileExtension = path.extname(req.file.originalname).toLowerCase();
-        console.log(`📥 Smart Router: Received a ${fileExtension} file`);
+    const fileExtension = path.extname(req.file.originalname).toLowerCase();
+    console.log(`📥 Smart Router: Received a ${fileExtension} file`);
 
-        if (fileExtension === '.csv') {
-            const result = await processCsvStream(req.file.path);
-            return res.status(201).json({ success: true, message: `Streaming ingestion completed! Processed ${result.count} rows.` });
-        }
-
-        if (fileExtension === '.pdf') {
-            const pdfBuffer = fs.readFileSync(req.file.path);
-            const cleanTitle = req.file.originalname.replace('.pdf', '');
-            
-            // Move uploaded file to uploads directory with permanent filename
-            const permanentFilename = `${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
-            const permanentPath = path.join('uploads', permanentFilename);
-            fs.copyFileSync(req.file.path, permanentPath);
-            if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-
-            const serverBaseUrl = process.env.SERVER_BASE_URL || 'http://localhost:3001';
-            const pdfUrl = `${serverBaseUrl}/uploads/${permanentFilename}`;
-
-            const paper = await processPdfAndIngest(pdfBuffer, cleanTitle, pdfUrl);
-            return res.status(201).json({ success: true, message: `Saved "${cleanTitle}" to Atlas!`, paper });
-        }
-
-        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-        return res.status(400).json({ success: false, message: "Unsupported file format." });
-
-    } catch (error) {
-        console.error("❌ Smart Upload Route Failure:", error);
-        return res.status(500).json({ success: false, message: "Ingestion failed", error: error.message });
+    if (fileExtension === '.csv') {
+      const result = await processCsvStream(req.file.path);
+      return res.status(201).json({ success: true, message: `Streaming ingestion completed! Processed ${result.count} rows.` });
     }
+
+    if (fileExtension === '.pdf') {
+      const pdfBuffer = fs.readFileSync(req.file.path);
+      const cleanTitle = req.file.originalname.replace('.pdf', '');
+
+      // Move uploaded file to uploads directory with permanent filename
+      const permanentFilename = `${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`;
+      const permanentPath = path.join('uploads', permanentFilename);
+      fs.copyFileSync(req.file.path, permanentPath);
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+
+      const serverBaseUrl = process.env.SERVER_BASE_URL || 'http://localhost:3001';
+      const pdfUrl = `${serverBaseUrl}/uploads/${permanentFilename}`;
+
+      const paper = await processPdfAndIngest(pdfBuffer, cleanTitle, pdfUrl);
+      return res.status(201).json({ success: true, message: `Saved "${cleanTitle}" to Atlas!`, paper });
+    }
+
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    return res.status(400).json({ success: false, message: "Unsupported file format." });
+
+  } catch (error) {
+    console.error("❌ Smart Upload Route Failure:", error);
+    return res.status(500).json({ success: false, message: "Ingestion failed", error: error.message });
+  }
 });
 
 export default router;

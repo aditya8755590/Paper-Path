@@ -15,7 +15,7 @@ export default function App() {
   const [savedPapers, setSavedPapers] = useState([]);
   const [readHistory, setReadHistory] = useState([]);
   const [currentPaper, setCurrentPaper] = useState(null);
-  const [isLoading, setIsLoading] = useState(true); // true by default so skeleton shows immediately
+  const [isLoading, setIsLoading] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   const [authError, setAuthError] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');   // email waiting for OTP
@@ -39,6 +39,7 @@ export default function App() {
   //  Check stored session token on mount
   useEffect(() => {
     const restoreSession = async () => {
+      setIsLoading(true);
       try {
         const storedProfile = await authService.getProfile();
         if (storedProfile && storedProfile._id) {
@@ -46,7 +47,9 @@ export default function App() {
           setView('dashboard');
         }
       } catch (err) {
-        // Token invalid or expired
+        // Token invalid or expired — stay on login
+      } finally {
+        setIsLoading(false);
       }
     };
     restoreSession();

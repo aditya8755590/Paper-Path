@@ -27,7 +27,7 @@ async function getGeminiEmbedding(text) {
     }
 }
 
-// ✂️ Helper: Chop massive PDFs into smaller, readable paragraphs
+// Helper: Chop massive PDFs into smaller, readable paragraphs
 function chunkText(text, chunkSize = 1000) {
     const chunks = [];
     for (let i = 0; i < text.length; i += chunkSize) {
@@ -39,22 +39,22 @@ function chunkText(text, chunkSize = 1000) {
 // 📄 PDF INGESTION PIPELINE
 export const processPdfAndIngest = async (pdfBuffer, title, pdfUrl = null) => {
     console.log(`🤖 Parsing PDF: ${title}...`);
-    
+
     // Use pdf2json in "Text Only" mode (the '1' parameter)
     const rawText = await new Promise((resolve, reject) => {
         const pdfParser = new PDFParser(null, 1);
-        
+
         pdfParser.on("pdfParser_dataError", errData => reject(errData.parserError));
         pdfParser.on("pdfParser_dataReady", () => {
             resolve(pdfParser.getRawTextContent());
         });
-        
+
         pdfParser.parseBuffer(pdfBuffer);
     });
 
     // Clean up the text for the AI (remove weird line breaks)
     const cleanText = rawText.replace(/\r\n/g, ' ').trim();
-    
+
     const textChunks = chunkText(cleanText, 1000);
     console.log(`🤖 Processing ${textChunks.length} chunks via Gemini Embedding API...`);
 
@@ -83,7 +83,7 @@ export const processPdfAndIngest = async (pdfBuffer, title, pdfUrl = null) => {
 // 📊 CSV INGESTION PIPELINE
 export const processCsvStream = async (filePath) => {
     console.log(`🤖 Processing CSV via Gemini Embedding API...`);
-    
+
     return new Promise((resolve, reject) => {
         let count = 0;
         const results = [];
@@ -92,18 +92,18 @@ export const processCsvStream = async (filePath) => {
             .on('data', (data) => results.push(data))
             .on('end', async () => {
                 console.log(`Found ${results.length} rows. Starting Gemini embeddings...`);
-                
+
                 for (const row of results) {
                     const title = row.title || row.Title || 'Unknown CSV Paper';
                     const abstract = row.abstract || row.Abstract || title;
-                    
+
                     let embedding = [];
                     try {
                         embedding = await getGeminiEmbedding(abstract);
                     } catch (e) {
                         console.warn(`Gemini embedding failed for ${title}, storing without embedding`);
                     }
-                    
+
                     const newPaper = new paperModel({
                         title: title,
                         abstract: abstract,
@@ -112,7 +112,7 @@ export const processCsvStream = async (filePath) => {
                         content: abstract,
                         chunks: [{ text: abstract, embedding: embedding }]
                     });
-                    
+
                     await newPaper.save();
                     count++;
                     if (count % 10 === 0) console.log(`  ...saved ${count}/${results.length} CSV papers`);
@@ -145,12 +145,12 @@ export const answerPaperQuestion = async (paper, prompt) => {
     if (paper.chunks && paper.chunks.length > 0) {
         try {
             const queryEmbedding = await getGeminiEmbedding(prompt);
-            
+
             if (queryEmbedding && queryEmbedding.length > 0) {
                 // Calculate similarity score for each chunk
                 const scoredChunks = paper.chunks.map(chunk => {
-                    const score = (chunk.embedding && chunk.embedding.length) 
-                        ? cosineSimilarity(queryEmbedding, chunk.embedding) 
+                    const score = (chunk.embedding && chunk.embedding.length)
+                        ? cosineSimilarity(queryEmbedding, chunk.embedding)
                         : 0;
                     return { text: chunk.text, score };
                 });

@@ -4,7 +4,7 @@ const chunkSchema = new mongoose.Schema({
     // Removed required: true
     chunkId: { type: String },
     text: { type: String, required: true },
-    embedding: { type: [Number], required: true } 
+    embedding: { type: [Number], required: true }
 });
 
 const paperSchema = new mongoose.Schema({
