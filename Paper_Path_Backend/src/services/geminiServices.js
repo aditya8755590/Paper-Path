@@ -4,7 +4,7 @@ import paperModel from '../models/paper.js';
 import PDFParser from 'pdf2json';
 import { GoogleGenAI } from '@google/genai';
 
-// 🧠 Helper: Generate vector embeddings using Google Gemini API (gemini-embedding-001)
+//  Helper: Generate vector embeddings using Google Gemini API (gemini-embedding-001)
 async function getGeminiEmbedding(text) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -26,7 +26,6 @@ async function getGeminiEmbedding(text) {
         return [];
     }
 }
-
 // Helper: Chop massive PDFs into smaller, readable paragraphs
 function chunkText(text, chunkSize = 1000) {
     const chunks = [];
@@ -36,7 +35,7 @@ function chunkText(text, chunkSize = 1000) {
     return chunks;
 }
 
-// 📄 PDF INGESTION PIPELINE
+// PDF INGESTION PIPELINE
 export const processPdfAndIngest = async (pdfBuffer, title, pdfUrl = null) => {
     console.log(`🤖 Parsing PDF: ${title}...`);
 
@@ -80,9 +79,9 @@ export const processPdfAndIngest = async (pdfBuffer, title, pdfUrl = null) => {
     return newPaper;
 };
 
-// 📊 CSV INGESTION PIPELINE
+// CSV INGESTION PIPELINE
 export const processCsvStream = async (filePath) => {
-    console.log(`🤖 Processing CSV via Gemini Embedding API...`);
+    console.log(` Processing CSV via Gemini Embedding API...`);
 
     return new Promise((resolve, reject) => {
         let count = 0;
@@ -124,7 +123,7 @@ export const processCsvStream = async (filePath) => {
     });
 };
 
-// 📐 Cosine Similarity Helper
+// Cosine Similarity Helper
 export function cosineSimilarity(vecA, vecB) {
     if (!vecA || !vecB || !vecA.length || vecA.length !== vecB.length) return 0;
     let dot = 0, normA = 0, normB = 0;
@@ -137,7 +136,7 @@ export function cosineSimilarity(vecA, vecB) {
     return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// 🤖 PAPER-SCOPED AI TUTOR ANSWER GENERATION
+// PAPER-SCOPED AI TUTOR ANSWER GENERATION
 export const answerPaperQuestion = async (paper, prompt) => {
     let relevantContext = "";
 
@@ -162,10 +161,12 @@ export const answerPaperQuestion = async (paper, prompt) => {
                 if (topChunks.length > 0) {
                     relevantContext = topChunks.join("\n\n---\n\n");
                 }
+
             }
         } catch (err) {
             console.log("Gemini embedding for query failed, using paper content directly:", err.message);
         }
+
     }
 
     if (!relevantContext) {

@@ -22,13 +22,12 @@ const persistToken = (result) => {
   }
 };
 
-// 🌐 Pure, unmocked fetch request to your real backend
+// Pure, unmocked fetch request to your real backend
 async function request(endpoint, { method = 'GET', body } = {}) {
   const token = getStoredToken();
-
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method,
-    headers: {
+    headers:{
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
@@ -40,7 +39,7 @@ async function request(endpoint, { method = 'GET', body } = {}) {
   if (!response.ok) {
     throw new Error(payload.message || 'Request failed');
   }
-
+  
   return payload.data ?? payload;
 }
 

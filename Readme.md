@@ -24,6 +24,7 @@ The application is split into two main parts:
 ## 2. Features
 
 ### User features
+
 - User registration and login
 - JWT-based authentication
 - Personal saved papers library
@@ -32,6 +33,7 @@ The application is split into two main parts:
 - Reader experience for individual papers
 
 ### AI and content features
+
 - PDF ingestion support
 - CSV ingestion support
 - Automatic paper metadata storage
@@ -39,6 +41,7 @@ The application is split into two main parts:
 - Search-like semantic retrieval over stored paper chunks
 
 ### Admin/Developer features
+
 - REST API structure for frontend integration
 - Upload endpoint for datasets
 - MongoDB-backed persistence
@@ -49,12 +52,14 @@ The application is split into two main parts:
 ## 3. Tech Stack
 
 ### Frontend
+
 - React 18
 - Vite
 - Tailwind CSS
 - Lucide React
 
 ### Backend
+
 - Node.js
 - Express.js
 - MongoDB with Mongoose
@@ -63,6 +68,7 @@ The application is split into two main parts:
 - dotenv for environment configuration
 
 ### AI Layer
+
 - Local Ollama server
 - Embedding model: nomic-embed-text
 - Generation model: qwen2.5:0.5b
@@ -108,10 +114,11 @@ Before running the project locally, make sure you have:
 - Node.js 16 or newer
 - npm or pnpm
 - MongoDB Atlas account or a local MongoDB instance
-- Ollama installed and running locally
+- Ollama or gemnani api or openrouter api
 - A browser to view the frontend
 
 ### Install Ollama
+
 If you want the AI features to work, install Ollama and pull the required models:
 
 ```bash
@@ -160,17 +167,8 @@ Create a `.env` file inside the backend folder based on the example file:
 cp ../.env.example .env
 ```
 
-Example values:
-
-```env
-PORT=3001
-MONGO_DB_URL=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
-GEMINI_API_KEY=your_gemini_key_if_needed
-VITE_API_BASE_URL=http://localhost:3001/api
-```
-
 ### Notes
+
 - `MONGO_DB_URL` is required for database connectivity.
 - `JWT_SECRET` is required for authentication.
 - `VITE_API_BASE_URL` is used by the frontend to call the backend.
@@ -215,17 +213,20 @@ http://localhost:3000
 The backend exposes the following API groups:
 
 ### Authentication
+
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `GET /api/auth/profile`
 
 ### Papers
+
 - `GET /api/papers`
 - `GET /api/papers/:paperId`
 - `POST /api/papers/:paperId/ask`
 - `POST /api/papers/upload`
 
 ### User library
+
 - `GET /api/users/library`
 - `POST /api/users/save/:paperId`
 - `POST /api/users/history/:paperId`
@@ -237,6 +238,7 @@ These routes are used by the React frontend through the API service layer.
 ## 10. How the App Works
 
 ### Flow overview
+
 1. A user registers or logs in.
 2. The frontend fetches papers from the backend.
 3. The user can save papers and view reading history.
@@ -256,6 +258,7 @@ To deploy the frontend on Netlify, use the following settings:
 - Functions directory: leave empty
 
 ### Environment variable for Netlify
+
 Add this environment variable in Netlify:
 
 ```text
@@ -277,6 +280,7 @@ The backend can be deployed on services such as:
 - VPS or cloud server
 
 ### Important deployment notes
+
 - Make sure MongoDB Atlas is reachable from the deployed backend.
 - Set your environment variables securely in the hosting platform.
 - If you deploy the backend, update the frontend environment variable to point to the new backend URL.
@@ -287,16 +291,19 @@ The backend can be deployed on services such as:
 ## 13. Troubleshooting
 
 ### Backend not starting
+
 - Check whether MongoDB is reachable.
 - Confirm your `.env` values are correct.
 - Make sure dependencies are installed.
 
 ### Frontend cannot connect to backend
+
 - Verify `VITE_API_BASE_URL` is set correctly.
 - Confirm the backend is actually running.
 - Check for CORS issues if frontend and backend are on different domains.
 
 ### AI features not working
+
 - Ensure Ollama is installed and running.
 - Verify the required models are downloaded.
 - Check that the backend can reach `http://localhost:11434`.
@@ -321,5 +328,4 @@ Possible enhancements for the project include:
 This project was built as a full-stack academic paper learning application with a focus on accessibility, search, and AI-assisted learning.
 
 Author and Creator :
-Karan Kumar 
-Aditya Kushwaha 
+Aditya Kushwaha
